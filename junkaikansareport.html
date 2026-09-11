@@ -26,15 +26,21 @@
         flex: 1; 
         min-height: 0; 
     }
+    
+    /* 修正: min-heightを文字の高さギリギリ(1.2em)まで許容し、溢れないようにする */
     .meeting-content-container p {
         margin: 0;
         border-bottom: 1px dashed #9ca3af;
         flex: 1; 
-        min-height: 1.2em; 
+        min-height: 1.2em; /* ここを30pxから1.2emに縮小可能に変更 */
         display: flex;
-        align-items: center; 
+        align-items: stretch;
         word-break: break-all;
         box-sizing: border-box;
+    }
+
+    .meeting-content-container p:last-child {
+        border-bottom: none;
     }
 
     @media print {
@@ -328,13 +334,32 @@
       const contentLines = formData.meetingContent ? formData.meetingContent.split('\n') : [];
       const renderLines = [];
       for(let i=0; i<Math.max(16, contentLines.length); i++){
-          renderLines.push(<p key={i}><span>{contentLines[i] || '\u00A0'}</span></p>);
+          renderLines.push(
+              <p key={i}>
+                  <span className="px-2 flex items-center w-full">{contentLines[i] || '\u00A0'}</span>
+              </p>
+          );
       }
 
       const todoLines = formData.todo ? formData.todo.split('\n') : [];
       const renderTodoLines = [];
       for(let i=0; i<Math.max(3, todoLines.length); i++){
-          renderTodoLines.push(<p key={`todo-${i}`}><span>{todoLines[i] || '\u00A0'}</span></p>);
+          if (i === 0) {
+              renderTodoLines.push(
+                  <p key={`todo-${i}`}>
+                      <span className="font-bold bg-gray-200 flex items-center justify-center border-r border-black w-[30%] shrink-0 text-center leading-tight">
+                          【次回訪問時までのTo Do】
+                      </span>
+                      <span className="flex-1 px-2 flex items-center">{todoLines[i] || '\u00A0'}</span>
+                  </p>
+              );
+          } else {
+              renderTodoLines.push(
+                  <p key={`todo-${i}`}>
+                      <span className="px-2 flex items-center w-full">{todoLines[i] || '\u00A0'}</span>
+                  </p>
+              );
+          }
       }
 
       return (
@@ -358,7 +383,7 @@
                   <tbody>
                     <tr>
                       <td className="border border-black p-0 w-[30%] align-top">
-                        <div className="text-center border-b border-black py-0.5 tracking-widest bg-gray-200">訪問日時</div>
+                        <div className="text-center border-b border-black min-h-[30px] flex items-center justify-center tracking-widest bg-gray-200">訪問日時</div>
                         <div className="flex flex-col items-center justify-center py-1.5 sm:py-2 min-h-[3rem]">
                           <div className="mb-0.5">
                             R <span className="inline-block w-6 text-center">{formData.visitYear}</span>年 
@@ -371,58 +396,65 @@
                         </div>
                       </td>
                       <td className="border border-black p-0 w-[46%] align-top">
-                        <div className="text-center border-b border-black py-0.5 tracking-widest bg-gray-200">関与先・参加者</div>
+                        <div className="text-center border-b border-black min-h-[30px] flex items-center justify-center tracking-widest bg-gray-200">関与先・参加者</div>
                         <div className="flex flex-col justify-center px-4 py-1.5 sm:py-2 min-h-[3rem]">
                           <div className="mb-0.5 border-b border-dotted border-gray-400">関与先： <span className="font-medium">{formData.client}</span></div>
                           <div className="border-b border-dotted border-gray-400">参加者： <span className="font-medium">{formData.participants}</span></div>
                         </div>
                       </td>
                       <td className="border border-black p-0 w-[12%] align-top">
-                        <div className="text-center border-b border-black py-0.5 tracking-widest bg-gray-200">承認印</div>
+                        <div className="text-center border-b border-black min-h-[30px] flex items-center justify-center tracking-widest bg-gray-200">承認印</div>
                         <div className="min-h-[3rem]"></div>
                       </td>
                       <td className="border border-black p-0 w-[12%] align-top">
-                        <div className="text-center border-b border-black py-0.5 tracking-widest bg-gray-200">担当者</div>
+                        <div className="text-center border-b border-black min-h-[30px] flex items-center justify-center tracking-widest bg-gray-200">担当者</div>
                         <div className="min-h-[3rem] flex items-center justify-center font-medium">{formData.staff}</div>
                       </td>
                     </tr>
                   </tbody>
                 </table>
 
-                <div className="border border-black mb-3 text-[13px] sm:text-[14px] p-2">
-                  <div className="font-bold mb-1">【渡し書類等】</div>
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-2 ml-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[16px] leading-none">{formData.doc1Check ? '☑' : '☐'}</span>
-                      <span className="whitespace-nowrap">試算表（ <span className="inline-block w-4 text-center">{formData.doc1Year}</span> 年 <span className="inline-block w-4 text-center">{formData.doc1Month}</span> 月分 ）</span>
+                <div className="border border-black mb-3 text-[13px] sm:text-[14px] flex flex-col">
+                  <div className="flex border-b border-black min-h-[30px]">
+                    <div className="w-[30%] bg-gray-200 border-r border-black flex items-center justify-center font-bold tracking-widest">
+                      【渡し書類等】
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[16px] leading-none">{formData.doc2Check ? '☑' : '☐'}</span>
-                      <div className={`flex-1 truncate ${formData.doc2Text ? 'border-b border-black' : 'border-b border-gray-400 h-[14px]'}`}>{formData.doc2Text}</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[16px] leading-none">{formData.doc3Check ? '☑' : '☐'}</span>
-                      <div className={`flex-1 truncate ${formData.doc3Text ? 'border-b border-black' : 'border-b border-gray-400 h-[14px]'}`}>{formData.doc3Text}</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[16px] leading-none">{formData.doc4Check ? '☑' : '☐'}</span>
-                      <div className={`flex-1 truncate ${formData.doc4Text ? 'border-b border-black' : 'border-b border-gray-400 h-[14px]'}`}>{formData.doc4Text}</div>
+                    <div className="flex-1 bg-white"></div>
+                  </div>
+                  <div className="p-2">
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-2 ml-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[16px] leading-none">{formData.doc1Check ? '☑' : '☐'}</span>
+                        <span className="whitespace-nowrap">試算表（ <span className="inline-block w-4 text-center">{formData.doc1Year}</span> 年 <span className="inline-block w-4 text-center">{formData.doc1Month}</span> 月分 ）</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[16px] leading-none">{formData.doc2Check ? '☑' : '☐'}</span>
+                        <div className={`flex-1 truncate ${formData.doc2Text ? 'border-b border-black' : 'border-b border-gray-400 h-[14px]'}`}>{formData.doc2Text}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[16px] leading-none">{formData.doc3Check ? '☑' : '☐'}</span>
+                        <div className={`flex-1 truncate ${formData.doc3Text ? 'border-b border-black' : 'border-b border-gray-400 h-[14px]'}`}>{formData.doc3Text}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[16px] leading-none">{formData.doc4Check ? '☑' : '☐'}</span>
+                        <div className={`flex-1 truncate ${formData.doc4Text ? 'border-b border-black' : 'border-b border-gray-400 h-[14px]'}`}>{formData.doc4Text}</div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="border-t border-r border-l border-black text-[13px] sm:text-[14px] flex-1 flex flex-col min-h-0">
-                  <div className="text-center py-1 bg-gray-200 border-b border-black font-medium tracking-wide">
+                <div className="border border-black text-[13px] sm:text-[14px] flex-1 flex flex-col min-h-0">
+                  <div className="text-center min-h-[30px] py-1 flex items-center justify-center bg-gray-200 border-b border-black font-medium tracking-wide shrink-0">
                     打合せ内容（先方への質問、先方からの質問、話した内容等）
                   </div>
-                  <div className="px-2 py-0 meeting-content-container flex-1 min-h-0">
+                  <div className="meeting-content-container flex-1 min-h-0">
                       {renderLines}
                   </div>
-                  <div className="border-t border-b border-black flex items-center">
-                    <div className="font-bold bg-gray-200 px-2 py-1.5 border-r border-black flex items-center h-full w-[35%] sm:w-[28%] shrink-0">
+                  <div className="border-t border-b border-black flex items-stretch min-h-[30px] shrink-0">
+                    <div className="font-bold bg-gray-200 border-r border-black flex items-center justify-center w-[30%] shrink-0 text-center leading-tight">
                       【次回の訪問予定日】
                     </div>
-                    <div className="px-2 py-1.5 flex-1 bg-white">
+                    <div className="px-2 flex-1 bg-white flex items-center">
                       R <span className="inline-block w-6 text-center">{formData.nextVisitYear}</span> 年 
                       <span className="inline-block w-6 text-center">{formData.nextVisitMonth}</span> 月 
                       <span className="inline-block w-6 text-center">{formData.nextVisitDay}</span> 日（{dayOfWeek}）
@@ -430,16 +462,8 @@
                     </div>
                   </div>
                   
-                  {/* ★修正: ToDoのグレー背景を上の文字部分だけに限定 */}
-                  <div className="flex border-b border-black flex-none min-h-[60px] sm:min-h-[90px]">
-                    <div className="border-r border-black w-[35%] sm:w-[28%] shrink-0 flex flex-col bg-white">
-                        <div className="font-bold bg-gray-200 px-2 py-1.5 w-full">
-                          【次回訪問時までのTo Do】
-                        </div>
-                    </div>
-                    <div className="flex-1 bg-white meeting-content-container px-2 pb-1">
-                         {renderTodoLines}
-                    </div>
+                  <div className="bg-white meeting-content-container flex-none">
+                      {renderTodoLines}
                   </div>
                 </div>
 
