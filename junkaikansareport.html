@@ -29,26 +29,36 @@
         box-sizing: border-box;
     }
 
+    /* 印刷時の設定（確実に1ページに収める強制ルール） */
     @media print {
-      @page { size: A4 portrait; margin: 10mm; }
+      @page { 
+        size: A4 portrait; 
+        margin: 0 !important; /* ブラウザ側の余白を強制ゼロに */
+      }
       html, body { 
+        width: 210mm !important;
+        height: 297mm !important;
         background-color: white !important; 
         margin: 0 !important; 
         padding: 0 !important;
         -webkit-print-color-adjust: exact; 
         print-color-adjust: exact; 
+        overflow: hidden !important; /* 万が一のあふれを防止 */
       }
       .no-print { display: none !important; }
       
       .print-area {
-        width: 100% !important;
-        height: auto !important;
-        max-width: none !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        max-width: 210mm !important;
+        max-height: 297mm !important;
         margin: 0 !important;
-        padding: 0 !important;
+        padding: 12mm 10mm !important; /* 印刷時の余白はここで設定 */
+        box-sizing: border-box !important;
         box-shadow: none !important;
         border: none !important;
         background-color: white !important;
+        overflow: hidden !important;
       }
     }
   </style>
@@ -308,7 +318,7 @@
       
       const contentLines = formData.meetingContent ? formData.meetingContent.split('\n') : [];
       const renderLines = [];
-      for(let i=0; i<Math.max(17, contentLines.length); i++){
+      for(let i=0; i<Math.max(16, contentLines.length); i++){
           renderLines.push(<p key={i}>{contentLines[i] || '\u00A0'}</p>);
       }
 
@@ -463,7 +473,7 @@
         };
       };
 
-      const [activeTab, setActiveTab] = useState('list'); // 起動時は履歴画面へ
+      const [activeTab, setActiveTab] = useState('list');
 
       const [settings, setSettings] = useState(() => {
         const saved = localStorage.getItem('auditAppSettings_v2');
@@ -474,19 +484,15 @@
         };
       });
 
-      // 保存されたレポート一覧の状態
       const [savedReports, setSavedReports] = useState(() => {
         const saved = localStorage.getItem('auditAppReports_v1');
         return saved ? JSON.parse(saved) : [];
       });
 
-      // 現在開いているレポートのID
       const [currentReportId, setCurrentReportId] = useState(null);
 
-      // フォームの状態
       const [formData, setFormData] = useState(() => getInitialFormData(settings));
 
-      // 設定・レポートが更新されたらローカルストレージに保存
       useEffect(() => {
         localStorage.setItem('auditAppSettings_v2', JSON.stringify(settings));
       }, [settings]);
@@ -503,19 +509,16 @@
         }));
       };
 
-      // ★ 保存機能
       const handleSave = () => {
         const title = `${formData.client || '関与先未設定'} (${formData.visitYear}年${formData.visitMonth}月${formData.visitDay}日)`;
         
         if (currentReportId) {
-          // 上書き保存
           setSavedReports(prev => prev.map(report => 
             report.id === currentReportId 
               ? { ...report, title, data: formData, updatedAt: Date.now() } 
               : report
           ));
         } else {
-          // 新規保存
           const newId = Date.now();
           setSavedReports(prev => [{ id: newId, title, data: formData, updatedAt: Date.now() }, ...prev]);
           setCurrentReportId(newId);
@@ -523,24 +526,21 @@
         alert('レポートを保存しました！\n「履歴」からいつでも再開できます。');
       };
 
-      // ★ 読み込み機能
       const handleLoad = (report) => {
         setFormData(report.data);
         setCurrentReportId(report.id);
         setActiveTab('input');
       };
 
-      // ★ 削除機能
       const handleDelete = (id) => {
         if(window.confirm('このレポートを削除してもよろしいですか？')) {
           setSavedReports(prev => prev.filter(report => report.id !== id));
           if (currentReportId === id) {
-            handleNew(); // 削除したのが現在開いているレポートならフォームをリセット
+            handleNew();
           }
         }
       };
 
-      // ★ 新規作成機能
       const handleNew = () => {
         setFormData(getInitialFormData(settings));
         setCurrentReportId(null);
@@ -560,7 +560,6 @@
             {activeTab === 'settings' && <SettingsView settings={settings} setSettings={setSettings} />}
           </main>
 
-          {/* ボトムナビゲーションを4列に変更 */}
           <nav className="no-print fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around p-2 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-50">
             <button 
               onClick={() => setActiveTab('list')}
