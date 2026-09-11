@@ -20,20 +20,29 @@
     body { font-family: 'Noto Sans JP', sans-serif; }
     .font-noto-sans { font-family: 'Noto Sans JP', sans-serif !important; }
     
+    /* 内容に合わせて縮小されるコンテナ */
+    .meeting-content-container {
+        display: flex;
+        flex-direction: column;
+        flex: 1; /* 残りのスペースを埋める */
+        min-height: 0; /* フレックスアイテムが縮むことを許可 */
+    }
     .meeting-content-container p {
         margin: 0;
         border-bottom: 1px dashed #9ca3af;
-        min-height: 30px;
-        line-height: 29px;
+        flex: 1; /* 各行が均等にスペースを分け合う */
+        min-height: 1.2em; /* 限界まで縮んだときの最小の高さ */
+        display: flex;
+        align-items: center; /* テキストを縦の中央に配置 */
         word-break: break-all;
         box-sizing: border-box;
     }
 
-    /* 印刷時の設定（確実に1ページに収める強制ルール） */
+    /* 印刷時の設定（確実に1ページに収める、自動縮小ルール） */
     @media print {
       @page { 
         size: A4 portrait; 
-        margin: 0 !important; /* ブラウザ側の余白を強制ゼロに */
+        margin: 0 !important; 
       }
       html, body { 
         width: 210mm !important;
@@ -43,7 +52,7 @@
         padding: 0 !important;
         -webkit-print-color-adjust: exact; 
         print-color-adjust: exact; 
-        overflow: hidden !important; /* 万が一のあふれを防止 */
+        overflow: hidden !important; 
       }
       .no-print { display: none !important; }
       
@@ -53,12 +62,22 @@
         max-width: 210mm !important;
         max-height: 297mm !important;
         margin: 0 !important;
-        padding: 12mm 10mm !important; /* 印刷時の余白はここで設定 */
+        padding: 12mm 10mm !important;
         box-sizing: border-box !important;
         box-shadow: none !important;
         border: none !important;
         background-color: white !important;
         overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+
+      /* 印刷時は外枠をフレックスコンテナにして、中身がはみ出ないように調整 */
+      .print-outer-box {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          min-height: 0;
       }
     }
   </style>
@@ -318,14 +337,14 @@
       
       const contentLines = formData.meetingContent ? formData.meetingContent.split('\n') : [];
       const renderLines = [];
-      for(let i=0; i<Math.max(16, contentLines.length); i++){
-          renderLines.push(<p key={i}>{contentLines[i] || '\u00A0'}</p>);
+      for(let i=0; i<Math.max(17, contentLines.length); i++){
+          renderLines.push(<p key={i}><span>{contentLines[i] || '\u00A0'}</span></p>);
       }
 
       const todoLines = formData.todo ? formData.todo.split('\n') : [];
       const renderTodoLines = [];
       for(let i=0; i<Math.max(3, todoLines.length); i++){
-          renderTodoLines.push(<p key={`todo-${i}`}>{todoLines[i] || '\u00A0'}</p>);
+          renderTodoLines.push(<p key={`todo-${i}`}><span>{todoLines[i] || '\u00A0'}</span></p>);
       }
 
       return (
@@ -343,7 +362,8 @@
               巡回監査レポート
             </h1>
 
-            <div className="border-2 border-black flex flex-col p-4 sm:p-6 bg-white flex-1">
+            {/* 一番外側の黒枠 */}
+            <div className="print-outer-box border-2 border-black flex flex-col p-4 sm:p-6 bg-white flex-1">
                 
                 <table className="w-full border-collapse border border-black mb-3 text-[13px] sm:text-[14px]">
                   <tbody>
@@ -402,11 +422,11 @@
                   </div>
                 </div>
 
-                <div className="border-t border-r border-l border-black text-[13px] sm:text-[14px] flex-1 flex flex-col">
+                <div className="border-t border-r border-l border-black text-[13px] sm:text-[14px] flex-1 flex flex-col min-h-0">
                   <div className="text-center py-1 bg-gray-200 border-b border-black font-medium tracking-wide">
                     打合せ内容（先方への質問、先方からの質問、話した内容等）
                   </div>
-                  <div className="px-2 py-0 meeting-content-container flex-1">
+                  <div className="px-2 py-0 meeting-content-container flex-1 min-h-0">
                       {renderLines}
                   </div>
                   <div className="border-t border-b border-black flex items-center">
@@ -420,7 +440,7 @@
                       <span className="ml-4">{formData.nextVisitTimeHour} : {formData.nextVisitTimeMinute} ～</span>
                     </div>
                   </div>
-                  <div className="flex border-b border-black flex-none min-h-[90px]">
+                  <div className="flex border-b border-black flex-none min-h-[60px] sm:min-h-[90px]">
                     <div className="font-bold bg-gray-200 px-2 py-1.5 border-r border-black w-[35%] sm:w-[28%] shrink-0">
                       【次回訪問時までのTo Do】
                     </div>
